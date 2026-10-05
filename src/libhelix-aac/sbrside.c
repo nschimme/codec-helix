@@ -171,7 +171,7 @@ static void SetDefaultSBRGrid(SBRGrid *sbrGrid)
  **************************************************************************************/
 static void UnpackSBRGrid(BitStreamInfo *bsi, SBRHeader *sbrHdr, SBRGrid *sbrGrid)
 {
-	int numEnvRaw, env, rel, pBits, border, middleBorder=0;
+	int numEnvRaw, env, rel, pBits, border, middleBorder=0, freqRes;
 	unsigned char relBordLead[MAX_NUM_ENV], relBordTrail[MAX_NUM_ENV];
 	unsigned char relBorder0[3], relBorder1[3], relBorder[3];
 	unsigned char numRelBorder0, numRelBorder1, numRelBorder, numRelLead=0, numRelTrail;
@@ -284,8 +284,13 @@ static void UnpackSBRGrid(BitStreamInfo *bsi, SBRHeader *sbrHdr, SBRGrid *sbrGri
 		pBits = cLog2[numRelBorder0 + numRelBorder1 + 2];
 		sbrGrid->pointer = GetBits(bsi, pBits);
 
-		for (env = 0; env < sbrGrid->numEnv; env++)
-			sbrGrid->freqRes[env] = GetBits(bsi, 1);
+		/* numEnv can reach 7 here: keep reading the bits so the stream stays
+		 * in sync, but store only what freqRes holds (checked after the switch) */
+		for (env = 0; env < sbrGrid->numEnv; env++) {
+			freqRes = GetBits(bsi, 1);
+			if (env < MAX_NUM_ENV)
+				sbrGrid->freqRes[env] = freqRes;
+		}
 
 		numRelLead =  numRelBorder0;
 		numRelTrail = numRelBorder1;
