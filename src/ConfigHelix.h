@@ -63,4 +63,9 @@
 /// the ESP8266 does not have enough memory
 #ifndef ESP8266
 #  define HELIX_FEATURE_AUDIO_CODEC_AAC_SBR
+#  define HELIX_FEATURE_AUDIO_CODEC_AAC_PS
+#endif
+
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) && !defined(AAC_ENABLE_PS)
+#  define AAC_ENABLE_PS 1
 #endif

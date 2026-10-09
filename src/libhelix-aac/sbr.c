@@ -239,6 +239,20 @@ int DecodeSBRBitstream(AACDecInfo *aacDecInfo, int chBase)
 		return ERR_AAC_SBR_BITSTREAM;
 	}
 
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+	if (aacDecInfo->prevBlockID == AAC_ID_SCE) {
+		if (GetBits(&bsi, 1)) { /* ps_data_present */
+			int ext_type = GetBits(&bsi, 2);
+			if (ext_type == EXT_PS) {
+				psi->psUsed = 1;
+				DecodePSHeader(&bsi, &psi->psData.hdr);
+				DecodePSDataPayload(&bsi, &psi->psData);
+				aacDecInfo->nChans = 2; /* Promote mono SBR stream with PS to stereo output */
+			}
+		}
+	}
+#endif
+
 	ByteAlignBitstream(&bsi);
 
 	return ERR_AAC_NONE;
@@ -366,6 +380,30 @@ int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
 
 			/* step 3 - HF adjustment */
 			AdjustHighFreq(psi, sbrHdr, sbrGrid, sbrFreq, sbrChan, ch);
+
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+			if (psi->psUsed && chBlock == 1) {
+				/* Apply Parametric Stereo slot-by-slot without huge RAM allocation */
+				qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
+				short *outL = outbuf;
+				short *outR = outbuf + 1;
+				int slot_L[64][2];
+				int slot_R[64][2];
+
+				for (l = 0; l < 32; l++) {
+					ProcessPSSlot(&psi->psData, psi->XBuf[l + HF_ADJ], slot_L, slot_R, l);
+
+					/* Synthesize Left channel QMF for slot l */
+					QMFSynthesis(slot_L[0], psi->delayQMFS[0], &(psi->delayIdxQMFS[0]), qmfsBands, outL, 2);
+					outL += 64;
+
+					/* Synthesize Right channel QMF for slot l */
+					QMFSynthesis(slot_R[0], psi->delayQMFS[1], &(psi->delayIdxQMFS[1]), qmfsBands, outR, 2);
+					outR += 64;
+				}
+				break;
+			}
+#endif
 
 			/* step 4 - synthesis QMF */
 			qmfsBands = sbrFreq->kStartPrev + sbrFreq->numQMFBandsPrev;

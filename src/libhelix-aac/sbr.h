@@ -48,6 +48,10 @@
 
 #include "aaccommon.h"
 #include "bitstream.h"
+#include "ConfigHelix.h"
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+#include "ps.h"
+#endif
 
 #ifndef ASSERT
 #if defined(_WIN32) && defined(_M_IX86) && (defined (_DEBUG) || defined (REL_ENABLE_ASSERTS))
@@ -333,6 +337,11 @@ typedef struct _PSInfoSBR {
 	int                   delayQMFS[AAC_MAX_NCHANS][DELAY_SAMPS_QMFS];
 	int                   XBufDelay[AAC_MAX_NCHANS][HF_GEN][64][2];
 	int                   XBuf[32+8][64][2];
+
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+	int                   psUsed;
+	PSData                psData;
+#endif
 
 } PSInfoSBR;
 
