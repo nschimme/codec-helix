@@ -48,6 +48,10 @@
 
 #include "aaccommon.h"
 #include "bitstream.h"
+#include "ConfigHelix.h"
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS)
+#include "ps.h"
+#endif
 
 #ifndef ASSERT
 #if defined(_WIN32) && defined(_M_IX86) && (defined (_DEBUG) || defined (REL_ENABLE_ASSERTS))
@@ -99,7 +103,11 @@
 #define MAX_HUFF_BITS		20
 #define NUM_QMF_DELAY_BUFS	10
 #define DELAY_SAMPS_QMFA	(NUM_QMF_DELAY_BUFS * 32)
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+#define DELAY_SAMPS_QMFS	(NUM_QMF_DELAY_BUFS * 64)
+#else
 #define DELAY_SAMPS_QMFS	(NUM_QMF_DELAY_BUFS * 128)
+#endif
 
 /* additional external symbols to name-mangle for static linking */
 #define FFT32C							STATNAME(FFT32C)
@@ -333,6 +341,11 @@ typedef struct _PSInfoSBR {
 	int                   delayQMFS[AAC_MAX_NCHANS][DELAY_SAMPS_QMFS];
 	int                   XBufDelay[AAC_MAX_NCHANS][HF_GEN][64][2];
 	int                   XBuf[32+8][64][2];
+
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS)
+	int                   psUsed;
+	PSData                psData;
+#endif
 
 } PSInfoSBR;
 

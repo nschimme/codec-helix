@@ -33,6 +33,18 @@ if (DEFINED ESP_PLATFORM)
   # define location for header files
   target_include_directories(arduino_helix PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/libhelix-mp3 ${CMAKE_CURRENT_SOURCE_DIR}/src/libhelix-aac )
 
+  add_executable(test_ps test/test_ps.cpp)
+  target_link_libraries(test_ps PRIVATE arduino_helix)
+  target_compile_options(test_ps PRIVATE -DUSE_DEFAULT_STDLIB)
+
+  add_executable(bench_aac test/bench_aac.cpp)
+  target_link_libraries(bench_aac PRIVATE arduino_helix)
+  target_compile_options(bench_aac PRIVATE -DUSE_DEFAULT_STDLIB)
+
+  add_executable(check_ram test/check_ram.cpp)
+  target_link_libraries(check_ram PRIVATE arduino_helix)
+  target_compile_options(check_ram PRIVATE -DUSE_DEFAULT_STDLIB)
+
   # build examples
   if(MP3_EXAMPLES)
     add_subdirectory( "${CMAKE_CURRENT_SOURCE_DIR}/examples/output_mp3")

@@ -60,7 +60,16 @@
 #  define HELIX_LOG_SIZE 256
 #endif
 
-/// the ESP8266 does not have enough memory
-#ifndef ESP8266
+/// On ESP8266: enable Downsampled SBR (HE-AAC v1), but disable PS (HE-AAC v2) to save RAM
+#ifdef ESP8266
 #  define HELIX_FEATURE_AUDIO_CODEC_AAC_SBR
+#  ifndef HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+#    define HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED 1
+#  endif
+#else
+#  define HELIX_FEATURE_AUDIO_CODEC_AAC_SBR
+#  define HELIX_FEATURE_AUDIO_CODEC_AAC_PS
+#  ifndef HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+#    define HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED 0
+#  endif
 #endif
