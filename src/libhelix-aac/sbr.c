@@ -239,7 +239,7 @@ int DecodeSBRBitstream(AACDecInfo *aacDecInfo, int chBase)
 		return ERR_AAC_SBR_BITSTREAM;
 	}
 
-#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS)
 	if (aacDecInfo->prevBlockID == AAC_ID_SCE) {
 		if (GetBits(&bsi, 1)) { /* ps_data_present */
 			int ext_type = GetBits(&bsi, 2);
@@ -381,7 +381,7 @@ int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
 			/* step 3 - HF adjustment */
 			AdjustHighFreq(psi, sbrHdr, sbrGrid, sbrFreq, sbrChan, ch);
 
-#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS) || (defined(AAC_ENABLE_PS) && AAC_ENABLE_PS)
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS)
 			if (psi->psUsed && chBlock == 1) {
 				/* Apply Parametric Stereo slot-by-slot without huge RAM allocation */
 				qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
