@@ -12,7 +12,19 @@ extern "C" {
 
 int main() {
     printf("============================================================\n");
-    printf(" Helix AAC Decoder Performance Benchmark (10,000 Frames)\n");
+    printf(" Helix AAC Decoder Performance & Memory Benchmark (10,000 Frames)\n");
+    printf("============================================================\n");
+
+    printf("Memory Footprint Metrics:\n");
+    printf("  sizeof(PSInfoSBR) : %zu bytes\n", sizeof(PSInfoSBR));
+    printf("  sizeof(PSData)    : %zu bytes\n", sizeof(PSData));
+    printf("  sizeof(PSHeader)  : %zu bytes\n", sizeof(PSHeader));
+
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+    printf("  Mode              : Downsampled SBR (Single-rate 1x Fs, 32-band QMF)\n");
+#else
+    printf("  Mode              : Standard SBR (Dual-rate 2x Fs, 64-band QMF)\n");
+#endif
     printf("============================================================\n");
 
     /* Allocate dummy subband buffers for benchmark */
@@ -69,8 +81,13 @@ int main() {
     for (int f = 0; f < NUM_FRAMES; f++) {
         short *out = pcm_buf;
         for (int l = 0; l < 32; l++) {
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+            QMFSynthesis(Xbuf[l + HF_ADJ][0], delayQMFS[0], &delayIdxQMFS[0], 32, out, 1);
+            out += 32;
+#else
             QMFSynthesis(Xbuf[l + HF_ADJ][0], delayQMFS[0], &delayIdxQMFS[0], 64, out, 1);
             out += 64;
+#endif
         }
     }
     clock_t end_v1 = clock();
@@ -83,18 +100,26 @@ int main() {
         short *outR = pcm_buf + 1;
         for (int l = 0; l < 32; l++) {
             ProcessPSSlot(&psd, Xbuf[l + HF_ADJ], slot_L, slot_R, l);
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+            QMFSynthesis(slot_L[0], delayQMFS[0], &delayIdxQMFS[0], 32, outL, 2);
+            outL += 64;
+            QMFSynthesis(slot_R[0], delayQMFS[1], &delayIdxQMFS[1], 32, outR, 2);
+            outR += 64;
+#else
             QMFSynthesis(slot_L[0], delayQMFS[0], &delayIdxQMFS[0], 64, outL, 2);
             outL += 64;
             QMFSynthesis(slot_R[0], delayQMFS[1], &delayIdxQMFS[1], 64, outR, 2);
             outR += 64;
+#endif
         }
     }
     clock_t end_v2 = clock();
     double time_v2 = (double)(end_v2 - start_v2) / CLOCKS_PER_SEC;
 
-    printf("AAC-LC Execution Time   : %8.3f ms (%5.1f us/frame)\n", time_lc * 1000.0, (time_lc * 1e6) / NUM_FRAMES);
-    printf("HE-AAC v1 Execution Time : %8.3f ms (%5.1f us/frame) [%.2fx vs LC]\n", time_v1 * 1000.0, (time_v1 * 1e6) / NUM_FRAMES, time_v1 / time_lc);
-    printf("HE-AAC v2 Execution Time : %8.3f ms (%5.1f us/frame) [%.2fx vs LC, %.2fx vs v1]\n", time_v2 * 1000.0, (time_v2 * 1e6) / NUM_FRAMES, time_v2 / time_lc, time_v2 / time_v1);
+    printf("Execution Times (10,000 frames):\n");
+    printf("  AAC-LC    : %8.3f ms (%5.1f us/frame)\n", time_lc * 1000.0, (time_lc * 1e6) / NUM_FRAMES);
+    printf("  HE-AAC v1 : %8.3f ms (%5.1f us/frame) [%.2fx vs LC]\n", time_v1 * 1000.0, (time_v1 * 1e6) / NUM_FRAMES, time_v1 / time_lc);
+    printf("  HE-AAC v2 : %8.3f ms (%5.1f us/frame) [%.2fx vs LC, %.2fx vs v1]\n", time_v2 * 1000.0, (time_v2 * 1e6) / NUM_FRAMES, time_v2 / time_lc, time_v2 / time_v1);
     printf("============================================================\n");
 
     return 0;

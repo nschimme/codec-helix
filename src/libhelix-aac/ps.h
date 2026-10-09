@@ -74,7 +74,7 @@ typedef struct _PSHeader {
     unsigned char icc_dt[MAX_PS_ENVELOPES];
 } PSHeader;
 
-/* PS Channel & Frame state */
+/* Optimized PS Channel & Frame state (compacted for microcontrollers) */
 typedef struct _PSData {
     unsigned char header_read;
     PSHeader hdr;
@@ -86,16 +86,13 @@ typedef struct _PSData {
     signed char iid_index_prev[PS_MAX_NUM_SUBBANDS];
     signed char icc_index_prev[PS_MAX_NUM_SUBBANDS];
 
-    /* Hybrid filter delay buffers (complex QMF subbands 0..2) */
-    int hybrid_delay[3][12][2]; /* [qmf_band][delay_samples][real/imag] */
-
-    /* Decorrelator delay buffers: 32 subbands, up to 14 delay samples */
-    int decorr_delay[32][14][2]; /* [subband][delay][re/im] */
+    /* Compact decorrelator delay buffers: 32 subbands x 2 delay samples x 2 (real/imag) */
+    int decorr_delay[32][2][2]; /* [subband][delay][re/im] */
 
     /* Allpass decorrelator state */
     int allpass_delay[32][3][2]; /* [subband][filter_stage][re/im] */
 
-    /* Interpolated mixing matrices (Q30 format) */
+    /* Mixing matrices for current frame envelopes (Q30 format) */
     int h11[MAX_PS_ENVELOPES][PS_MAX_NUM_SUBBANDS];
     int h12[MAX_PS_ENVELOPES][PS_MAX_NUM_SUBBANDS];
     int h21[MAX_PS_ENVELOPES][PS_MAX_NUM_SUBBANDS];
