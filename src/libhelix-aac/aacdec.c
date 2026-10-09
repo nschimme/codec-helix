@@ -182,9 +182,15 @@ void AACGetLastFrameInfo(HAACDecoder hAACDecoder, AACFrameInfo *aacFrameInfo)
 		aacFrameInfo->bitRate =       aacDecInfo->bitRate;
 		aacFrameInfo->nChans =        aacDecInfo->nChans;
 		aacFrameInfo->sampRateCore =  aacDecInfo->sampRate;
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+		aacFrameInfo->sampRateOut =   aacDecInfo->sampRate;
+		aacFrameInfo->bitsPerSample = 16;
+		aacFrameInfo->outputSamps =   aacDecInfo->nChans * AAC_MAX_NSAMPS;
+#else
 		aacFrameInfo->sampRateOut =   aacDecInfo->sampRate * (aacDecInfo->sbrEnabled ? 2 : 1);
 		aacFrameInfo->bitsPerSample = 16;
 		aacFrameInfo->outputSamps =   aacDecInfo->nChans * AAC_MAX_NSAMPS * (aacDecInfo->sbrEnabled ? 2 : 1);
+#endif
 		aacFrameInfo->profile =       aacDecInfo->profile;
 		aacFrameInfo->tnsUsed =       aacDecInfo->tnsUsed;
 		aacFrameInfo->pnsUsed =       aacDecInfo->pnsUsed;

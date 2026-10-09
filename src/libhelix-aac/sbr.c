@@ -384,7 +384,11 @@ int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
 #if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_PS)
 			if (psi->psUsed && chBlock == 1) {
 				/* Apply Parametric Stereo slot-by-slot without huge RAM allocation */
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+				qmfsBands = 32;
+#else
 				qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
+#endif
 				short *outL = outbuf;
 				short *outR = outbuf + 1;
 				int slot_L[64][2];
@@ -406,12 +410,20 @@ int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
 #endif
 
 			/* step 4 - synthesis QMF */
+#if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED) && HELIX_FEATURE_AUDIO_CODEC_AAC_SBR_DOWNSAMPLED
+			qmfsBands = 32;
+			for (l = 0; l < 32; l++) {
+				QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
+				outptr += 64*aacDecInfo->nChans;
+			}
+#else
 			qmfsBands = sbrFreq->kStartPrev + sbrFreq->numQMFBandsPrev;
 			for (l = 0; l < sbrGrid->envTimeBorder[0]; l++) {
 				/* if new envelope starts mid-frame, use old settings until start of first envelope in this frame */
 				QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
 				outptr += 64*aacDecInfo->nChans;
 			}
+#endif
 
 			qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
 			for (     ; l < 32; l++) {
