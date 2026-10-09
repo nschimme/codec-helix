@@ -48,16 +48,3 @@ const int alpha_tab[8] PROGMEM = {
     0x0cccccccc, /* 0.10 */
     0x08f5c28f  /* 0.06 */
 };
-
-/* Hybrid filter coefficients (13-tap Q30) */
-const int ps_p2_13[13] PROGMEM = {
-    0x00171a8e, 0x009385bf, 0x0182ec7a, 0x028bf5aa, 0x03816ee3, 0x042bb4ec,
-    0x046c8200,
-    0x042bb4ec, 0x03816ee3, 0x028bf5aa, 0x0182ec7a, 0x009385bf, 0x00171a8e
-};
-
-const int ps_p8_13[13] PROGMEM = {
-    0x000c0f40, 0x00492100, 0x00c17a00, 0x0145fa00, 0x01c0b700, 0x0215da00,
-    0x02364100,
-    0x0215da00, 0x01c0b700, 0x0145fa00, 0x00c17a00, 0x00492100, 0x000c0f40
-};

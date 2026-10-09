@@ -27,23 +27,23 @@ extern "C" {
 #define Q30(x)               ((int)((x) * 1073741824.0 + ((x) >= 0 ? 0.5 : -0.5)))
 #define Q15(x)               ((short)((x) * 32768.0 + ((x) >= 0 ? 0.5 : -0.5)))
 
-/* PS Header & Grid parameters */
+/* Compact PS Header & Grid parameters (8-bit fields to save ROM and RAM) */
 typedef struct _PSHeader {
-    int enable_ps_header;
-    int enable_iid;
-    int iid_mode;
-    int enable_icc;
-    int icc_mode;
-    int enable_ext;
-    int num_env;
-    int border_position[MAX_PS_ENVELOPES + 1];
-    int iid_dt[MAX_PS_ENVELOPES];
-    int icc_dt[MAX_PS_ENVELOPES];
+    unsigned char enable_ps_header;
+    unsigned char enable_iid;
+    unsigned char iid_mode;
+    unsigned char enable_icc;
+    unsigned char icc_mode;
+    unsigned char enable_ext;
+    unsigned char num_env;
+    unsigned char border_position[MAX_PS_ENVELOPES + 1];
+    unsigned char iid_dt[MAX_PS_ENVELOPES];
+    unsigned char icc_dt[MAX_PS_ENVELOPES];
 } PSHeader;
 
 /* PS Channel & Frame state */
 typedef struct _PSData {
-    int header_read;
+    unsigned char header_read;
     PSHeader hdr;
 
     /* Quantized and dequantized parameters */
@@ -74,8 +74,6 @@ typedef struct _PSData {
 extern const int iid_scale_tab[15] PROGMEM;
 extern const int icc_scale_tab[8] PROGMEM;
 extern const int alpha_tab[8] PROGMEM;
-extern const int ps_p2_13[13] PROGMEM;
-extern const int ps_p8_13[13] PROGMEM;
 
 /* Function prototypes */
 int DecodePSHeader(BitStreamInfo *bsi, PSHeader *hdr);
