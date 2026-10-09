@@ -5,6 +5,7 @@
 #include "ps.h"
 #include "sbr.h"
 #include "assembly.h"
+#include <string.h>
 
 /* Fixed point multiply: Q30 * Q30 -> Q30 */
 static inline int MUL_Q30(int a, int b) {
@@ -168,43 +169,45 @@ void ProcessPSSlot(PSData *psd, int Xbuf_slot[64][2], int slot_L[64][2], int slo
         }
     }
 
-    for (k = 0; k < 64; k++) {
+    const int *h11_tab = psd->h11[env];
+    const int *h12_tab = psd->h12[env];
+    const int *h21_tab = psd->h21[env];
+    const int *h22_tab = psd->h22[env];
+
+    /* Subbands 0..31: Allpass decorrelation and matrix mixing */
+    for (k = 0; k < 32; k++) {
         int re = Xbuf_slot[k][0];
         int im = Xbuf_slot[k][1];
 
-        if (k < PS_SUBBANDS_DECORR) {
-            int b = (k < 20) ? k : 20 + ((k - 20) >> 1);
-            int h11 = psd->h11[env][b];
-            int h12 = psd->h12[env][b];
-            int h21 = psd->h21[env][b];
-            int h22 = psd->h22[env][b];
+        int b = (k < 20) ? k : 20 + ((k - 20) >> 1);
+        int h11 = h11_tab[b];
+        int h12 = h12_tab[b];
+        int h21 = h21_tab[b];
+        int h22 = h22_tab[b];
 
-            /* Allpass filter stage using alpha_tab coefficient g */
-            int g = alpha_tab[k & 7];
+        /* Allpass filter stage using alpha_tab coefficient g */
+        int g = alpha_tab[k & 7];
 
-            /* True Allpass filter: w[n] = g * (x[n] - w_prev) + w_prev */
-            int w_re = MUL_Q30(g, re - psd->allpass_delay[k][0][0]) + psd->allpass_delay[k][0][0];
-            int w_im = MUL_Q30(g, im - psd->allpass_delay[k][0][1]) + psd->allpass_delay[k][0][1];
+        /* True Allpass filter: w[n] = g * (x[n] - w_prev) + w_prev */
+        int w_re = MUL_Q30(g, re - psd->allpass_delay[k][0][0]) + psd->allpass_delay[k][0][0];
+        int w_im = MUL_Q30(g, im - psd->allpass_delay[k][0][1]) + psd->allpass_delay[k][0][1];
 
-            psd->allpass_delay[k][0][0] = w_re;
-            psd->allpass_delay[k][0][1] = w_im;
+        psd->allpass_delay[k][0][0] = w_re;
+        psd->allpass_delay[k][0][1] = w_im;
 
-            int d_re = w_re;
-            int d_im = w_im;
+        int d_re = w_re;
+        int d_im = w_im;
 
-            /* Left channel subband = h11 * S + h12 * D */
-            slot_L[k][0] = MUL_Q30(re, h11) + MUL_Q30(d_re, h12);
-            slot_L[k][1] = MUL_Q30(im, h11) + MUL_Q30(d_im, h12);
+        /* Left channel subband = h11 * S + h12 * D */
+        slot_L[k][0] = MUL_Q30(re, h11) + MUL_Q30(d_re, h12);
+        slot_L[k][1] = MUL_Q30(im, h11) + MUL_Q30(d_im, h12);
 
-            /* Right channel subband = h21 * S + h22 * D */
-            slot_R[k][0] = MUL_Q30(re, h21) + MUL_Q30(d_re, h22);
-            slot_R[k][1] = MUL_Q30(im, h21) + MUL_Q30(d_im, h22);
-        } else {
-            /* Mono passthrough for high subbands */
-            slot_L[k][0] = re;
-            slot_L[k][1] = im;
-            slot_R[k][0] = re;
-            slot_R[k][1] = im;
-        }
+        /* Right channel subband = h21 * S + h22 * D */
+        slot_R[k][0] = MUL_Q30(re, h21) + MUL_Q30(d_re, h22);
+        slot_R[k][1] = MUL_Q30(im, h21) + MUL_Q30(d_im, h22);
     }
+
+    /* Subbands 32..63: Fast block memcpy passthrough for high frequencies */
+    memcpy(&slot_L[32], &Xbuf_slot[32], 32 * sizeof(int) * 2);
+    memcpy(&slot_R[32], &Xbuf_slot[32], 32 * sizeof(int) * 2);
 }
